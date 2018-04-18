@@ -11,10 +11,15 @@ import UIKit
 class TodoListViewController: UITableViewController {
     
     var itemArray = [Item]() //["Find Mike", "Buy Eggos", "Destory Demogorgon"]
-    let defaults = UserDefaults.standard
+    
+    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        
+        
+        print(dataFilePath)
         
         let newItem = Item()
         newItem.title = "Find Mike"
@@ -29,11 +34,9 @@ class TodoListViewController: UITableViewController {
         itemArray.append(newItem3)
         
         
+        loadItem()
         
-        
-        if let item = defaults.array(forKey: "TodoListArray") as? [Item] {
-            itemArray = item
-        }
+
     }
 
     // MARK = TableView DataSource Methods
@@ -49,13 +52,6 @@ class TodoListViewController: UITableViewController {
         cell.textLabel?.text = item.title
         
         cell.accessoryType = item.done ? .checkmark : .none
-        
-//        if itemArray[indexPath.row].done == true {
-//            cell.accessoryType = .checkmark
-//        } else {
-//            cell.accessoryType = .none
-//        }
-        
         return cell
     }
     
@@ -64,8 +60,7 @@ class TodoListViewController: UITableViewController {
 //        print(itemArray[indexPath.row])
         
         itemArray[indexPath.row].done = !itemArray[indexPath.row].done
-        
-        tableView.reloadData()
+        saveItem()
         
         tableView.deselectRow(at: indexPath, animated: true)
     }
@@ -84,8 +79,9 @@ class TodoListViewController: UITableViewController {
             newItem.title = textField.text!
             
             self.itemArray.append(newItem)
-            //self.defaults.set(self.itemArray, forKey: "TodoListArray")
-            self.tableView.reloadData()
+            
+            self.saveItem()
+            
         }
         
         alert.addTextField { (alertTextField) in
@@ -97,5 +93,31 @@ class TodoListViewController: UITableViewController {
         present(alert, animated: true, completion: nil)
     }
     
+    // MARK - Model Manupulation Method
+    
+    func saveItem(){
+        let encoder = PropertyListEncoder()
+        do {
+            let data = try encoder.encode(itemArray)
+            try data.write(to: dataFilePath!)
+        } catch {
+            print(error)
+        }
+        
+        tableView.reloadData()
+    }
+    
+    func loadItem() {
+        if let data = try? Data(contentsOf: dataFilePath!) {
+            let decoder = PropertyListDecoder()
+            
+            do {
+                itemArray = try decoder.decode([Item].self, from: data)
+            } catch {
+                print(error)
+            }
+            
+        }
+    }
 }
 
